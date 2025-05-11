@@ -1,0 +1,19 @@
+# 2025.5.11
+[first commit] 移植SC7到RVfpga,支持线程切换
+1. 采用了SC7 master分支的ff89dcf6fb33a0e9ae2036d679f827fb3686f52f提交，大幅度删减代码，以适配RV32
+2. 使用Serial Monitor监视对应串口，输出应该为：
+
+#### Serial Monitor
+```
+---- 已打开串行端口 COM8 ----
+AtBtCtDtEtFtGtHtItJtKtLtMtNtOtPtQtRtStTtUtVtWtXtYtZt
+xn6_start_kernel at :0x0000091a
+proc初始化完成
+switch to process 0
+process init here!
+process 0 is not RUNNABLE, skip.
+switch to process 1
+process1 here!
+......
+
+```
