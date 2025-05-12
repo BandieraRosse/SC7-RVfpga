@@ -2,7 +2,6 @@
 #define __PROCESS_H__
 
 #include "types.h"
-#include "spinlock.h"
 
 #define NPROC (16)
 
@@ -57,16 +56,14 @@ typedef struct proc {
 	struct trapframe *trapframe; // data page for trampoline.S
 	struct context context; // swtch() here to run process
 	
-	spinlock_t lock;		///< 自旋锁限制修改
 	void *chan;				///< 如果 non-zero，sleeping on chan
 } proc_t;
 
 
 
-struct proc *curr_proc();
 void proc_init();
 void scheduler() __attribute__((noreturn));
 struct proc *allocproc();
-void            sleep_on_chan(void*, struct spinlock*);
+void sched(void); 
 void            wakeup(void*);
 #endif // PROC_H

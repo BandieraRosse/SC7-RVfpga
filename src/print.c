@@ -1,4 +1,3 @@
-#include "uart.h"
 #include "types.h"
 #include <stdarg.h>
 #include <stdbool.h>
@@ -6,11 +5,7 @@
 #define COLOR_RESET    "\033[0m"  // 重置所有属性
 #define RED_COLOR_PRINT		"\033[31;1m"
 
-int printUartPutchar(char ch);
-// void put_char_sync(char c)
-// {
-//   printUartPutchar(c);
-// }
+int printUartPutchar(char ch); //< bsp_printf.c提供
 
 /** 放一个char到终端 */
 void 
@@ -36,9 +31,6 @@ print_line(char *str)//should receive a str end with \0. Like "print line"
         printUartPutchar(*str++);
 }
 
-/*
-以下来自xv6-2021
-*/
 static char digits[] = "0123456789abcdef";
 
 /** 往终端放int */

@@ -1,10 +1,4 @@
 #include "cpu.h"
-#include "spinlock.h"
-#ifdef RISCV
-#include "riscv.h"
-#else
-#include "loongarch.h"
-#endif
 
 cpu_t cpus[NCPU];
 
@@ -39,8 +33,6 @@ mycpu(void)
 proc_t* 
 myproc(void) 
 {
-    //push_off();
     proc_t* p = mycpu()->proc;
-    //pop_off();
     return p;
 }
