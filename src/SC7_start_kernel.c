@@ -13,6 +13,7 @@
 
 void process1_entry();
 void process_init_entry();
+void process_figlet_entry();
 void sc7_create_process(void (*process_entry)(void));
 int SC7_start_kernel();
 int printUartPutchar(char ch);
@@ -53,7 +54,7 @@ int SC7_start_kernel()
     //初始化线程
     sc7_creat_process(&process_init_entry);
     sc7_creat_process(&process1_entry);
-    sc7_creat_process(&process1_entry);
+    sc7_creat_process(&process_figlet_entry);
     sc7_creat_process(&process1_entry);
     sc7_creat_process(&process1_entry);
 
@@ -100,6 +101,23 @@ void process1_entry()
     PRINT_COLOR(process1_color,"process %d here\n",myproc()->pid);
     uint64 i =pspTimerCounterGet(E_MACHINE_TIMER); //获取timer的value,已运行周期数
     PRINT_COLOR(process1_color,"time is: %p\n",i);
+    for(int i=0;i<WAIT_TIME;i++)
+    {
+      
+    }
+    self_sched();
+  }
+}
+
+#define process_figlet_color COLOR_RESET
+void process_figlet_entry()
+{
+  PRINT_COLOR(process_figlet_color,"process %d init!\n",myproc()->pid);
+  char c[2]={'A','\0'};char c1[2]={'a','\0'};
+  while(1)
+  {
+    PRINT_COLOR(process_figlet_color,"process %d here\n",myproc()->pid);
+    printf_figlet("process figlet here!");
     for(int i=0;i<WAIT_TIME;i++)
     {
       

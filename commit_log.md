@@ -27,3 +27,6 @@ process1 here!
 
 # 2025.5.15
 [feat] 增加了sc7_create_process函数
+
+# 2025.5.15
+[feat] 修正了figlet的部分格式，增加process_figlet例程
