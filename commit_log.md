@@ -21,3 +21,6 @@ process1 here!
 # 2025.5.12
 [refactor] 大幅度删减，精简到7个文件
 1. test.c中的函数可以正常使用，printf支持颜色打印。
+
+# 2025.5.14
+[feat] 增加figlet.c，可以输出艺术字

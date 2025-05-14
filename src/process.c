@@ -2,6 +2,9 @@
 #include "string.h"
 #include "print.h"
 #include "cpu.h"
+
+#include "bsp_printf.h" //< 使用pspTimerCounterGet函数要包含这个，否则没有uint32_t的定义
+#include "psp_timers_eh1.h"
 extern void swtch(struct context *idle, struct context *p); //< swtch.S
 
 #define PAGE_SIZE (0x1000)
