@@ -30,3 +30,6 @@ process1 here!
 
 # 2025.5.15
 [feat] 修正了figlet的部分格式，增加process_figlet例程
+
+# 2025.5.15
+[docs] 添加SC7-RVfpga.docx
