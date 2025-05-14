@@ -83,7 +83,7 @@ void scheduler(void)
 		int i=0;
 		for (p = pool; p < &pool[NPROC]; p++) {
 			if (p->state == RUNNABLE) {
-				PRINT_COLOR(BLUE_COLOR_PRINT,"switch to process %d\n",i);
+				//PRINT_COLOR(BLUE_COLOR_PRINT,"switch to process %d\n",i);
 				p->state = RUNNING;
 				cpu->proc = p;
 				swtch(&mycpu()->context,&p->context);

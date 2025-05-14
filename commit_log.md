@@ -24,3 +24,6 @@ process1 here!
 
 # 2025.5.14
 [feat] 增加figlet.c，可以输出艺术字
+
+# 2025.5.15
+[feat] 增加了sc7_create_process函数
