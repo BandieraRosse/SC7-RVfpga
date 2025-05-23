@@ -25,6 +25,7 @@ static void thread1_entry()
         /* 线程 1 采用低优先级运行，一直打印计数值 */
         printf("thread1 count: %d\n", count ++);
         delay(1000);
+        self_sched();
     }
 }
 
@@ -38,23 +39,24 @@ static void thread2_entry()
     {
         /* 线程 2 打印计数值 */
         printf("thread2 count: %d\n", count);
+        self_sched();
     }
     printf("thread2 exit\n");
+    exit();
 }
 
 void exitApp1(){
     while(1){
         if(READ_SW()>>14==1){
             printf("准备退出thread_sample\n");
-            delete(tid1);
-            delete(tid2);
+            deleteproc(tid1);
+            deleteproc(tid2);
             printf("成功退出thread_sample\n");
             delay(1000);
             wakeup(lk);
             exit();
-            //rt_thread_delay(1000);
         }
-        //rt_thread_delay(100);
+        self_sched();
     }
 }
 /* 线程示例 */

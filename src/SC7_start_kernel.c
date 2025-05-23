@@ -53,6 +53,7 @@ int SC7_start_kernel()
 		}
 		printUartPutchar('\n');
 
+    pmem_init();
 		proc_init();
 		PRINT_COLOR(YELLOW_COLOR_PRINT,"proc初始化完成\n");
 
@@ -147,6 +148,7 @@ int sc7_create_process(void (*process_entry)(void)) //< 给定入口函数，创
     struct proc* p = allocproc();
     p->state=RUNNABLE;
     p->context.ra = (uint64)process_entry;
+    printf("create  process %d\n",p->pid);
     return p->pid;
 }
 
@@ -156,6 +158,7 @@ void printInfo(){
   printf("0000:thread_sample()\n");
   printf("0001:figlet_test()\n");
   printf("0002:segdig_test()\n");
+  printf("0004:mem_test()\n");
   printf("--------------------------------------------------------------------------\n");
 }
 void start_APP(){
@@ -180,6 +183,11 @@ void start_APP(){
             break;
           case 0x8002:
             segdig_test();
+            sleep(lk);
+            printInfo();
+            break;
+          case 0x8004:
+            mem_test();
             sleep(lk);
             printInfo();
             break;

@@ -153,7 +153,18 @@ void exit()
   p->state = ZOMBIE;
   sched();
 }
-void delete(int pid) { struct proc* p = &pool[pid]; p->state = ZOMBIE;	}
+
+
+void deleteproc(int pid) 
+{ 
+	struct proc* p = &pool[pid]; 
+	printf("deleteproc: pid = %d\n",pid);
+	p->state = ZOMBIE;	
+	memset(&p->context, 0, sizeof(p->context));
+	memset(p->trapframe, 0, PAGE_SIZE);
+	memset((void *)p->kstack, 0, PAGE_SIZE);
+	p->context.ra = 0;
+}
 
 void delay(uint64 time)
 {

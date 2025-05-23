@@ -68,5 +68,6 @@ void sched(void);
 void wakeup(void*);
 void self_sched();
 void exit();
+void deleteproc(int pid);
 void delay(uint64 time);
 #endif // PROC_H
