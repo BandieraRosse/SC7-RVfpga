@@ -55,7 +55,7 @@ typedef struct proc {
 	uint64 kstack; // Virtual address of kernel stack
 	struct trapframe *trapframe; // data page for trampoline.S
 	struct context context; // swtch() here to run process
-	
+
 	void *chan;				///< 如果 non-zero，sleeping on chan
 } proc_t;
 
@@ -65,5 +65,8 @@ void proc_init();
 void scheduler() __attribute__((noreturn));
 struct proc *allocproc();
 void sched(void); 
-void            wakeup(void*);
+void wakeup(void*);
+void self_sched();
+void exit();
+void delay(uint64 time);
 #endif // PROC_H

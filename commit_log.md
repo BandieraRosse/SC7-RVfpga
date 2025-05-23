@@ -36,3 +36,6 @@ process1 here!
 
 # 2025.5.15
 [feat] 增加控制switch,led,segdig的例程和函数
+
+# 2025.5.15
+[feat] 实现开关切换用户程序，实现sleep、wakeup、delay函数

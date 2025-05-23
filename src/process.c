@@ -3,6 +3,7 @@
 #include "print.h"
 #include "cpu.h"
 
+#include "board.h"
 #include "bsp_printf.h" //< 使用pspTimerCounterGet函数要包含这个，否则没有uint32_t的定义
 #include "psp_timers_eh1.h"
 extern void swtch(struct context *idle, struct context *p); //< swtch.S
@@ -119,3 +120,49 @@ wakeup(void *chan)
 	  }
 	}
   }
+
+void sleep(void *chan)
+{
+    struct proc *p = myproc();
+    /*
+     * Must acquire p->lock in order to
+     * change p->state and then call sched.
+     * Once we hold p->lock, we can be
+     * guaranteed that we won't miss any wakeup
+     * (wakeup locks p->lock),
+     * so it's okay to release lk.
+     */
+    /* Go to sleep. */
+    p->chan = chan;
+    p->state = SLEEPING;
+    sched();
+    /* Tidy up. */
+    p->chan = 0;
+}
+
+void self_sched()
+{
+  struct proc* p = myproc();
+  p->state = RUNNABLE;
+  sched();
+}
+
+void exit()
+{
+  struct proc* p = myproc();
+  p->state = ZOMBIE;
+  sched();
+}
+void delete(int pid) { struct proc* p = &pool[pid]; p->state = ZOMBIE;	}
+
+void delay(uint64 time)
+{
+
+	time = time * 50000;
+	uint64 start = pspTimerCounterGet(E_MACHINE_TIMER);
+	while (1) {
+    uint64 current = pspTimerCounterGet(E_MACHINE_TIMER);
+    uint64 elapsed = (current >= start) ? (current - start) : (__UINT64_MAX__ - start + current + 1);
+    if (elapsed >= time) break;
+	}
+}
