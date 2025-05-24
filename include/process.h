@@ -3,7 +3,7 @@
 
 #include "types.h"
 
-#define NPROC (16)
+#define NPROC (32)
 
 enum procstate { UNUSED, USED, SLEEPING, RUNNABLE, RUNNING, ZOMBIE };
 

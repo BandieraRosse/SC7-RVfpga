@@ -3,153 +3,148 @@
 #include "types.h"
 #include "pmem.h"
 #include <stdbool.h>
+#include <stddef.h>
 
+#define ALIGNMENT 8 // 8字节对齐
+#define ALIGN(size) (((size) + (ALIGNMENT - 1)) & ~(ALIGNMENT - 1))
 
+char heap[1024 * 1024]; // 1MB堆空间
 
-char heap[500*1024];
-/**
- * @brief 物理内存链表节点
- * 存放指向下一个节点的指针，本身的地址作为分配的物理内存地址
- */
-typedef struct listnode
+typedef struct mem_block
 {
-    struct listnode *next;
-} listnode_t;
+    size_t size;
+    bool free;
+    struct mem_block *next;
+} mem_block_t;
 
-/**
- * @brief  内存空闲位图
- * 防止Double Free
- * 为1表示页可分配
- */
-static bool page_free[PAGE_NUM];
-/**
- * @brief 物理内存空闲链表
- *
- */
 struct mem_struct
 {
-    listnode_t freelist;
+    mem_block_t freelist; // 带哨兵节点的空闲链表
 } mem;
 
 uint64 _mem_start, _mem_end;
+
+// 初始化内存管理系统
 void pmem_init()
 {
-    uint64 pa;
-    listnode_t *node;
-    mem.freelist.next = NULL;
+    // 初始化堆空间
+    _mem_start = (uint64)heap;
+    _mem_end = (uint64)heap + sizeof(heap);
 
-    _mem_start = heap;
-    memset(page_free, 1, sizeof(page_free));
-    _mem_end = heap + 500*1024; 
-    /* 头插法初始化内存链表，倒着循环让freelist按地址升序排列*/
-    for (pa = _mem_end - PGSIZE; pa >= _mem_start; pa -= PGSIZE)
-    {
-        node = (listnode_t *)pa;
-        node->next = mem.freelist.next;
-        mem.freelist.next = node;
-    }
-    printf("kernel_mem_start = %p\n", _mem_start);
-    printf("kernel_mem_end  = %p\n", _mem_end);
-    LOG("pmem init success\n");
+    // 初始化空闲链表
+    mem_block_t *init_block = (mem_block_t *)heap;
+    init_block->size = sizeof(heap) - sizeof(mem_block_t);
+    init_block->free = true;
+    init_block->next = NULL;
+
+    mem.freelist.next = init_block;
+    mem.freelist.size = 0; // 哨兵节点不参与分配
+
+    LOG("PMEM initialized with %dKB heap\n", sizeof(heap) / 1024);
 }
 
-/**
- * @brief  分配一个物理页
- *
- * @param npages 分配的页面数量，目前只支持1页
- * @return void* 分配成功返回物理页地址，失败返回NULL
- */
-void *pmem_alloc_pages(int npages)
+// 内存分配核心函数
+void *pmem_alloc(size_t size)
 {
-    assert(npages == 1, "alloc page num should be 1\n");
-    listnode_t *node;
+    if (size == 0)
+        return NULL;
 
-    node = mem.freelist.next;
-    if (node)
-        mem.freelist.next = node->next;
-    else
+    // 计算对齐后的总需求空间（包含块头）
+    size_t required_size = ALIGN(size + sizeof(mem_block_t));
+
+    mem_block_t *current = mem.freelist.next;
+    mem_block_t *prev = &mem.freelist;
+
+    while (current)
     {
-        panic("Error mem alloc");
-        mem.freelist.next = NULL;
-    }
-    if (node)
-    {
-        uint64 page_idx = ((uint64)node - _mem_start) / PGSIZE;
-        assert(page_idx < PAGE_NUM,
-               "pmem_alloc_pages: page_idx out of range\n");
-        page_free[page_idx] = false; ///< 在内存位图中标记为已分配
-    }
-    memset(node, 0, PGSIZE); ///< 由于node中默认存储了next指针，分配时需要清空
+        if (current->free && current->size >= required_size)
+        {
+            // 找到足够大的空闲块
+            if (current->size > required_size + sizeof(mem_block_t))
+            {
+                // 空间足够大，进行分割
+                mem_block_t *new_block = (mem_block_t *)((char *)current + required_size);
+                new_block->size = current->size - required_size;
+                new_block->free = true;
+                new_block->next = current->next;
 
-    return (void *)node;
-};
+                current->size = required_size;
+                current->next = new_block;
+            }
 
-/**
- * @brief 释放指针指向的页面
- *
- * @param ptr 释放页面的首地址，需要对齐
- * @param npages  释放页的数量，目前只支持1页
- */
-void pmem_free_pages(void *ptr, int npages)
-{
-    assert(ptr, "ptr is null\n");
-    assert(npages == 1, "free page num should be 1\n");
-    assert(((uint64)ptr != 0) || (uint64)ptr % PGSIZE == 0, "ptr align error\n");
-
-    uint64 page_idx = ((uint64)ptr - _mem_start) / PGSIZE;
-    assert(page_idx < PAGE_NUM, "pmem_free_pages: page_idx out of range\n");
-    /* 防止释放已经释放的页面*/
-    if (page_free[page_idx])
-    {
-        panic("Double free detected");
+            current->free = false;
+            prev->next = current->next;   // 从空闲链表移除
+            return (void *)(current + 1); // 返回块头之后的数据区
+        }
+        prev = current;
+        current = current->next;
     }
 
-    page_free[page_idx] = true;
+    // 内存不足
+    LOG("Memory allocation failed for size: %d\n", size);
+    return NULL;
+}
 
-    memset(ptr, 0, PGSIZE);
-    listnode_t *node = (listnode_t *)ptr;
-    assert((uint64)ptr >= _mem_start && (uint64)ptr <= _mem_end, "Memory Access Out of Bounds\n");
-    node->next = mem.freelist.next;
-    mem.freelist.next = node;
-};
-
-/**
- * @brief 分配一页物理页
- * 
- * @return void* 
- */
-void *
-kalloc(void)
+// 内存释放核心函数
+void pmem_free(void *ptr)
 {
-    void *ptr = pmem_alloc_pages(1);
-    if (ptr == NULL)
+    if (!ptr)
+        return;
+
+    // 获取块头指针
+    mem_block_t *block = (mem_block_t *)ptr - 1;
+    block->free = true;
+
+    // 合并相邻空闲块
+    mem_block_t *current = mem.freelist.next;
+    mem_block_t *prev = &mem.freelist;
+
+    // 按地址顺序插入到空闲链表
+    while (current && current < block)
     {
-        panic("kmalloc failed");
+        prev = current;
+        current = current->next;
+    }
+
+    block->next = current;
+    prev->next = block;
+
+    // 前向合并
+    if (prev != &mem.freelist && prev->free)
+    {
+        if ((char *)prev + sizeof(mem_block_t) + prev->size == (char *)block)
+        {
+            prev->size += sizeof(mem_block_t) + block->size;
+            prev->next = block->next;
+            block = prev;
+        }
+    }
+
+    // 后向合并
+    mem_block_t *next_block = block->next;
+    if (next_block && next_block->free)
+    {
+        if ((char *)block + sizeof(mem_block_t) + block->size == (char *)next_block)
+        {
+            block->size += sizeof(mem_block_t) + next_block->size;
+            block->next = next_block->next;
+        }
+    }
+}
+
+// 分配内存接口
+void *kmalloc(uint64 size)
+{
+    void *ptr = pmem_alloc(size);
+    if (!ptr)
+    {
+        LOG("kmalloc failed for size: %d\n", size);
     }
     return ptr;
 }
-/**
- * @brief 释放ptr指向的一页物理页
- * 
- * @param ptr 
- */
-void
-kfree(void *ptr)
-{
-    pmem_free_pages(ptr, 1);
-}
 
-/**
- * TODO: 动态内存分配
- */
-void *
-kmalloc(uint64 size) 
+// 释放内存接口
+void kfree(void *ptr)
 {
-    return kalloc();
-}
-
-void *
-kcalloc(uint n, uint64 size) 
-{
-    return kalloc();
+    pmem_free(ptr);
 }

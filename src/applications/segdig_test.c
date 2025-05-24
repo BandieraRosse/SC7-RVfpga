@@ -19,31 +19,42 @@ extern void exit();
 #define process_figlet_color COLOR_RESET
 
 extern char *lk;
-void segdig_test()
-{
-    PRINT_COLOR(RED_COLOR_PRINT,"------------------------------segdig_test start-------------------------------------------\n");
-    sc7_create_process(&process_segdig_entry);
-}
-
 void process_segdig_entry() //<显示时间到数码管
 {
-  int En_Value=0xFFFF, switches_value;
-  WRITE_GPIO(GPIO_INOUT,En_Value);
-  while (1) 
-  { 
-    printf("[segdig]process %d here\n",myproc()->pid);
-    
-    //WRITE_GPIO(SegDig_ADDR, 0x00111309);
-    uint64 i =pspTimerCounterGet(E_MACHINE_TIMER);
-    WRITE_GPIO(SegDig_ADDR, i);
-    printf("[segdig]time is %p\n",i);
-    delay(1000);
-    if(READ_SW()>>14==1){
-      PRINT_COLOR(RED_COLOR_PRINT,"------------------------------segdig_test end-------------------------------------------\n");
-      wakeup(lk);
-      exit();
-    }else{
-      self_sched();
+    int En_Value = 0xFFFF;
+    WRITE_GPIO(GPIO_INOUT, En_Value);
+    while (1)
+    {
+        printf("[segdig]process %d here\n", myproc()->pid);
+        // WRITE_GPIO(SegDig_ADDR, 0x00111309);
+        uint64 i = pspTimerCounterGet(E_MACHINE_TIMER);
+        WRITE_GPIO(SegDig_ADDR, i);
+        printf("[segdig]time is %p\n", i);
+        delay(1000);
+        self_sched();
     }
-  }
+}
+int tid2;
+void exitApp2()
+{
+    while (1)
+    {
+        if (READ_SW() >> 14 == 1)
+        {
+            deleteproc(tid2);
+            PRINT_COLOR(RED_COLOR_PRINT, "------------------------------segdig_test end -------------------------------------------\n");
+            printf("成功退出segdig_sample\n");
+            delay(1000);
+            wakeup(lk);
+            exit();
+        }
+        self_sched();
+    }
+}
+
+void segdig_test()
+{
+    PRINT_COLOR(RED_COLOR_PRINT, "------------------------------segdig_test start-------------------------------------------\n");
+    tid2 = sc7_create_process(&process_segdig_entry);
+    sc7_create_process(&exitApp2);
 }
