@@ -36,3 +36,17 @@ process1 here!
 
 # 2025.5.15
 [feat] 增加控制switch,led,segdig的例程和函数
+
+# 2025.5.21
+[feat] 实现开关切换用户程序，实现sleep、wakeup、delay函数
+
+# 2025.5.23
+[fix] 修复因pid不从0开始导致的偏移量问题
+
+# 2025.5.23
+[feat] 移植priority_queue,重整代码格式
+
+# 2025.5.23
+[feat] 添加priority_queue例程,修改进程调度算法为优先级调度,添加sc7_start_process启动函数
+
+

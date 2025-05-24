@@ -2,8 +2,9 @@
 #define __PROCESS_H__
 
 #include "types.h"
+#include "priority_queue.h"
 
-#define NPROC (16)
+#define NPROC (32)
 
 enum procstate { UNUSED, USED, SLEEPING, RUNNABLE, RUNNING, ZOMBIE };
 
@@ -51,19 +52,28 @@ typedef struct context //loongarch 12个
 typedef struct proc {
 	enum procstate state; // Process state
 	int pid; // Process ID
+	int priority;
 	uint64 ustack; // Virtual address of user stack 现在是物理地址
 	uint64 kstack; // Virtual address of kernel stack
 	struct trapframe *trapframe; // data page for trampoline.S
 	struct context context; // swtch() here to run process
-	
+
 	void *chan;				///< 如果 non-zero，sleeping on chan
 } proc_t;
 
-
+#define  Priority_max 16
+#define  Priority_min 2
+PriorityQueue *pq;
 
 void proc_init();
 void scheduler() __attribute__((noreturn));
 struct proc *allocproc();
 void sched(void); 
-void            wakeup(void*);
+void wakeup(void*);
+void yield();
+void exit();
+void deleteproc(int pid);
+void delay(uint64 time);
+int sc7_create_process(void (*process_entry)(void), int priority);
+void sc7_start_process(int pid);
 #endif // PROC_H
