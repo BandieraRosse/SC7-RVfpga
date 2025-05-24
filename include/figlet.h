@@ -8,4 +8,5 @@ typedef struct {
 
 
 void printf_figlet(char *fmt);
+void printf_figlet_color(char *fmt);
 void test_figlet();

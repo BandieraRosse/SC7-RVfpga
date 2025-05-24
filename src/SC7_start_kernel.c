@@ -46,7 +46,7 @@ int SC7_start_kernel()
     uartInit();
     PRINT_COLOR(RED_COLOR_PRINT, "-------------------------------------------------------------------------\n");
     // PRINT_COLOR(GREEN_COLOR_PRINT,"SC7 is booting!\n");
-    printf_figlet("SC7 Is Booting!");                                              //< 艺术字打印
+    printf_figlet_color("SC7 Is Booting!");                                              //< 艺术字打印
     PRINT_COLOR(BLUE_COLOR_PRINT, "SC7_start_kernel at :%p\n", &SC7_start_kernel); //< 颜色打印
     for (int i = 65; i < 65 + 26; i++)
     {
