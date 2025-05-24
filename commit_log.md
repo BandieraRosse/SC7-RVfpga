@@ -49,4 +49,6 @@ process1 here!
 # 2025.5.23
 [feat] 添加priority_queue例程,修改进程调度算法为优先级调度,添加sc7_start_process启动函数
 
+# 2025.5.24
+[feat] 更新figlet.c,增加printf_figlet_color，酷炫的颜色打印
 
