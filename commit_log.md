@@ -37,5 +37,10 @@ process1 here!
 # 2025.5.15
 [feat] 增加控制switch,led,segdig的例程和函数
 
-# 2025.5.15
+# 2025.5.21
 [feat] 实现开关切换用户程序，实现sleep、wakeup、delay函数
+
+# 2025.5.23
+[fix] 修复因pid不从0开始导致的偏移量问题
+
+

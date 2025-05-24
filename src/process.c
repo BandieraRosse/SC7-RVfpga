@@ -45,7 +45,7 @@ void proc_init(void)
 int 
 allocpid(void) 
 {
-    static int PID = 1;
+    static int PID = 0;
     int pid = PID++;
     return pid;
 }
@@ -83,6 +83,7 @@ void scheduler(void)
 	for (;;) {
 		int i=0;
 		for (p = pool; p < &pool[NPROC]; p++) {
+			//printf("process %d state %d\n",i,p->state);
 			if (p->state == RUNNABLE) {
 				//PRINT_COLOR(BLUE_COLOR_PRINT,"switch to process %d\n",i);
 				p->state = RUNNING;
@@ -158,12 +159,13 @@ void exit()
 void deleteproc(int pid) 
 { 
 	struct proc* p = &pool[pid]; 
-	printf("deleteproc: pid = %d\n",pid);
+	//printf("deleteproc: pid = %d\n",pid);
 	p->state = ZOMBIE;	
+	//printf("deleteproc: pid%d.state:%d\n",p->pid,ZOMBIE);
 	memset(&p->context, 0, sizeof(p->context));
 	memset(p->trapframe, 0, PAGE_SIZE);
-	memset((void *)p->kstack, 0, PAGE_SIZE);
-	p->context.ra = 0;
+	//memset((void *)p->kstack, 0, PAGE_SIZE);
+	// p->context.ra = 0;
 }
 
 void delay(uint64 time)
