@@ -76,7 +76,7 @@ KeyValue *priority_queue_dequeue(PriorityQueue *pq)
 void priority_queue_enqueue(PriorityQueue *pq,
                             KeyValue *kv)
 {
-    printf("add key:%d\n", kv->_key);
+    //printf("add key:%d\n", kv->_key);
     pq->_nodes[pq->_size] = kv;
     priority_queue_adjust_tail(pq);
     if (pq->_size >= pq->_capacity)

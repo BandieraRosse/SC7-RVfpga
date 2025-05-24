@@ -19,7 +19,6 @@ void process_init_entry();
 void process_figlet_entry();
 void process_led_entry();
 void process_segdig_entry();
-int sc7_create_process(void (*process_entry)(void));
 int SC7_start_kernel();
 int printUartPutchar(char ch);
 void start_APP();
@@ -64,7 +63,7 @@ int SC7_start_kernel()
     // test_assert();
 
     // 初始化线程
-    sc7_create_process(&start_APP);
+    int tid = sc7_create_process(&start_APP, Priority_min);
     // sc7_create_process(&process_init_entry);
     // sc7_create_process(&process1_entry);
     // sc7_create_process(&process_led_entry);
@@ -92,7 +91,7 @@ void process_init_entry()
         for (int i = 0; i < WAIT_TIME; i++)                  //< 对应汇编是两句指令，所以time增量是WAIT_TIME的两倍
         {
         }
-        self_sched(); //< 主动让出
+        yield(); //< 主动让出
     }
 }
 
@@ -108,7 +107,7 @@ void process1_entry()
         for (int i = 0; i < WAIT_TIME; i++)
         {
         }
-        self_sched();
+        yield();
     }
 }
 
@@ -135,17 +134,8 @@ void process_led_entry()
         for (int i = 0; i < WAIT_TIME; i++)
         {
         }
-        self_sched();
+        yield();
     }
-}
-
-int sc7_create_process(void (*process_entry)(void)) //< 给定入口函数，创建process
-{
-    struct proc *p = allocproc();
-    p->state = RUNNABLE;
-    p->context.ra = (uint64)process_entry;
-    printf("create  process %d\n", p->pid);
-    return p->pid;
 }
 
 void printInfo()

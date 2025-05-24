@@ -3,6 +3,7 @@
 #include "print.h"
 #include "cpu.h"
 
+#include "priority_queue.h"
 #include "board.h"
 #include "bsp_printf.h" //< 使用pspTimerCounterGet函数要包含这个，否则没有uint32_t的定义
 #include "psp_timers_eh1.h"
@@ -29,7 +30,6 @@ int threadid()
 // {
 // 	return myproc();
 // }
-
 // initialize the proc table at boot time.
 void proc_init(void)
 {
@@ -41,6 +41,7 @@ void proc_init(void)
         p->ustack = (uint64)ustack[p - pool];
         p->trapframe = (struct trapframe *)trapframe[p - pool];
     }
+    pq = priority_queue_new(PRIORITY_MIN);
 }
 
 int allocpid(void)
@@ -68,6 +69,7 @@ struct proc *allocproc(void)
 found:
     p->pid = allocpid();
     p->state = USED;
+    p->priority = Priority_max;
     memset(&p->context, 0, sizeof(p->context));
     memset(p->trapframe, 0, PAGE_SIZE);
     memset((void *)p->kstack, 0, PAGE_SIZE);
@@ -76,33 +78,101 @@ found:
     return p;
 }
 
+int sc7_create_process(void (*process_entry)(void), int priority) //< 给定入口函数，创建process
+{
+    struct proc *p = allocproc();
+    if (p == NULL)
+        return NULL;
+    p->state = RUNNABLE;
+    p->priority = priority;
+    p->context.ra = (uint64)process_entry;
+    printf("create  process %d\n", p->pid);
+    return p->pid;
+}
+
+void sc7_start_process(int pid)
+{
+    struct proc *p = &pool[pid];
+    p->state = RUNNABLE;
+    add_task(p);
+    yield();
+}
+
+void yield()
+{
+    struct proc *p = myproc();
+    p->state = RUNNABLE;
+    add_task(p);
+    sched();
+}
+
+struct proc *fetch_task()
+{
+    KeyValue *kv;
+    kv = priority_queue_dequeue(pq);
+    if (kv != NULL)
+    {
+        struct proc *p = (struct proc *)kv->_value;
+        return p;
+    }
+    return NULL;
+}
+
+void add_task(struct proc *p)
+{
+    KeyValue *kv = key_value_new(p->priority, p);
+    priority_queue_enqueue(pq, kv);
+}
+
 void scheduler(void)
 {
     struct proc *p;
+    add_task(&pool[0]);
     cpu_t *cpu = mycpu();
     cpu->proc = NULL;
     for (;;)
     {
-        int i = 0;
-        for (p = pool; p < &pool[NPROC]; p++)
+        p = fetch_task();
+        //printf("fetch task: %d\n",p->pid);
+        if (p == NULL)
         {
-            // printf("process %d state %d\n",i,p->state);
-            if (p->state == RUNNABLE)
-            {
-                // PRINT_COLOR(BLUE_COLOR_PRINT,"switch to process %d\n",i);
-                p->state = RUNNING;
-                cpu->proc = p;
-                swtch(&mycpu()->context, &p->context);
-
-                /* 返回这里时没有用户进程在CPU上执行 */
-                cpu->proc = NULL;
-            }
-            i++;
-            i % 16;
-            // printf("process %d is not RUNNABLE, skip.\n",i++);
+            panic("all app are over!\n");
+        }else if(p->state == ZOMBIE){
+            continue;
         }
+        p->state = RUNNING;
+        cpu->proc = p;
+        swtch(&mycpu()->context, &p->context);
     }
 }
+
+// void scheduler(void)
+// {
+//     struct proc *p;
+//     cpu_t *cpu = mycpu();
+//     cpu->proc = NULL;
+//     for (;;)
+//     {
+//         int i = 0;
+//         for (p = pool; p < &pool[NPROC]; p++)
+//         {
+//             // printf("process %d state %d\n",i,p->state);
+//             if (p->state == RUNNABLE)
+//             {
+//                 // PRINT_COLOR(BLUE_COLOR_PRINT,"switch to process %d\n",i);
+//                 p->state = RUNNING;
+//                 cpu->proc = p;
+//                 swtch(&mycpu()->context, &p->context);
+
+//                 /* 返回这里时没有用户进程在CPU上执行 */
+//                 cpu->proc = NULL;
+//             }
+//             i++;
+//             i % 16;
+//             // printf("process %d is not RUNNABLE, skip.\n",i++);
+//         }
+//     }
+// }
 
 void sched(void)
 {
@@ -121,6 +191,7 @@ void wakeup(void *chan)
         if (p->state == SLEEPING && p->chan == chan)
         {
             p->state = RUNNABLE;
+            add_task(p);
         }
     }
 }
@@ -144,13 +215,6 @@ void sleep(void *chan)
     p->chan = 0;
 }
 
-void self_sched()
-{
-    struct proc *p = myproc();
-    p->state = RUNNABLE;
-    sched();
-}
-
 void exit()
 {
     struct proc *p = myproc();
@@ -164,8 +228,8 @@ void deleteproc(int pid)
     // printf("deleteproc: pid = %d\n",pid);
     p->state = ZOMBIE;
     // printf("deleteproc: pid%d.state:%d\n",p->pid,ZOMBIE);
-    memset(&p->context, 0, sizeof(p->context));
-    memset(p->trapframe, 0, PAGE_SIZE);
+    //memset(&p->context, 0, sizeof(p->context));
+    //memset(p->trapframe, 0, PAGE_SIZE);
     // memset((void *)p->kstack, 0, PAGE_SIZE);
     //  p->context.ra = 0;
 }

@@ -8,7 +8,7 @@
 #define ALIGNMENT 8 // 8字节对齐
 #define ALIGN(size) (((size) + (ALIGNMENT - 1)) & ~(ALIGNMENT - 1))
 
-char heap[1024 * 1024]; // 1MB堆空间
+char heap[512 * 1024]; // 512KB堆空间
 
 typedef struct mem_block
 {

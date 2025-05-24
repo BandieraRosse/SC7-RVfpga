@@ -13,7 +13,7 @@
 
 void process_figlet_entry();
 void process_segdig_entry();
-extern void self_sched();
+extern void yield();
 extern void exit();
 
 #define process_figlet_color COLOR_RESET
@@ -33,7 +33,7 @@ void process_figlet_entry()
         PRINT_COLOR(process_figlet_color, "[figlet]process %d here\n", myproc()->pid);
         printf_figlet("process figlet here!");
         delay(1000);
-        self_sched();
+        yield();
     }
 }
 
@@ -49,13 +49,17 @@ void exitApp1()
             wakeup(lk);
             exit();
         }
-        self_sched();
+        yield();
     }
 }
 
 void figlet_test()
 {
     PRINT_COLOR(RED_COLOR_PRINT, "------------------------------figlet_test start-------------------------------------------\n");
-    tid1 = sc7_create_process(&process_figlet_entry);
-    sc7_create_process(&exitApp1);
+    tid1 = sc7_create_process(&process_figlet_entry, 14);
+    if (tid1 != NULL)
+        sc7_start_process(tid1);
+    int tid = sc7_create_process(&exitApp1, 14);
+    if (tid != NULL)
+        sc7_start_process(tid);
 }

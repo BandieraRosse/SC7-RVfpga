@@ -24,7 +24,7 @@ static void thread1_entry()
         /* 线程 1 采用低优先级运行，一直打印计数值 */
         printf("thread1 count: %d\n", count++);
         delay(1000);
-        self_sched();
+        yield();
     }
 }
 
@@ -38,7 +38,8 @@ static void thread2_entry()
     {
         /* 线程 2 打印计数值 */
         printf("thread2 count: %d\n", count);
-        self_sched();
+        delay(200);
+        yield();
     }
     printf("thread2 exit\n");
     exit();
@@ -57,16 +58,24 @@ void exitApp0()
             wakeup(lk);
             exit();
         }
-        self_sched();
+        yield();
     }
 }
 /* 线程示例 */
 int thread_test(void)
 {
     PRINT_COLOR(RED_COLOR_PRINT, "------------------------------thread_test start-------------------------------------------\n");
-    tid01 = sc7_create_process(&thread1_entry);
-    tid02 = sc7_create_process(&thread2_entry);
-    sc7_create_process(&exitApp0);
+    tid01 = sc7_create_process(&thread1_entry, 14);
+    if (tid01 != NULL)
+        sc7_start_process(tid01);
+    yield();
+    delay(3000);   
+    tid02 = sc7_create_process(&thread2_entry, 13);
+    if (tid02 != NULL)
+        sc7_start_process(tid02);
+    int tid = sc7_create_process(&exitApp0, 14);
+    if (tid != NULL)
+        sc7_start_process(tid);
 
     return 0;
 }

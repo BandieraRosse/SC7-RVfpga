@@ -13,7 +13,7 @@
 
 void process_figlet_entry();
 void process_segdig_entry();
-extern void self_sched();
+extern void yield();
 extern void exit();
 
 #define process_figlet_color COLOR_RESET
@@ -31,7 +31,7 @@ void process_segdig_entry() //<显示时间到数码管
         WRITE_GPIO(SegDig_ADDR, i);
         printf("[segdig]time is %p\n", i);
         delay(1000);
-        self_sched();
+        yield();
     }
 }
 int tid2;
@@ -48,13 +48,17 @@ void exitApp2()
             wakeup(lk);
             exit();
         }
-        self_sched();
+        yield();
     }
 }
 
 void segdig_test()
 {
     PRINT_COLOR(RED_COLOR_PRINT, "------------------------------segdig_test start-------------------------------------------\n");
-    tid2 = sc7_create_process(&process_segdig_entry);
-    sc7_create_process(&exitApp2);
+    tid2 = sc7_create_process(&process_segdig_entry, 14);
+    if (tid2 != NULL)
+        sc7_start_process(tid2);
+    int tid = sc7_create_process(&exitApp2, 14);
+    if (tid != NULL)
+        sc7_start_process(tid);
 }

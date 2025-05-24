@@ -39,7 +39,7 @@ void memtest_entry(void *parameter)
             return;
         }
         delay(1000);
-        self_sched();
+        yield();
     }
     exit();
 }
@@ -55,15 +55,19 @@ void exitApp4()
             wakeup(lk);
             exit();
         }
-        self_sched();
+        yield();
     }
 }
 
 int mem_test(void)
 {
     PRINT_COLOR(RED_COLOR_PRINT, "------------------------------mem_test start-------------------------------------------\n");
-    tid4 = sc7_create_process(&memtest_entry);
-    sc7_create_process(&exitApp4);
+    tid4 = sc7_create_process(&memtest_entry, 14);
+    if (tid4 != NULL)
+        sc7_start_process(tid4);
+    int tid = sc7_create_process(&exitApp4, 14);
+    if (tid != NULL)
+        sc7_start_process(tid);
 
     return 0;
 }
