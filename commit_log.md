@@ -52,3 +52,5 @@ process1 here!
 # 2025.5.24
 [feat] 更新figlet.c,增加printf_figlet_color，酷炫的颜色打印
 
+# 2025.5.25
+[refator] 添加注释，figlet修改为SC7-FPGA 

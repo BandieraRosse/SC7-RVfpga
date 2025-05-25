@@ -22,8 +22,6 @@ void memtest_entry(void *parameter)
     for (i = 0;; i++)
     {
         size_t request_size = 1 << i;
-        size_t pages_needed = (request_size + PGSIZE - 1) / PGSIZE;
-
         ptr = kmalloc(request_size); // 分配一页
 
         if (ptr != NULL)
@@ -35,10 +33,10 @@ void memtest_entry(void *parameter)
         }
         else
         {
-            printf("Failed to allocate %d bytes\n", request_size);
+            panic("Failed to allocate %d bytes\n", request_size);
             return;
         }
-        delay(1000);
+        delay(500);
         yield();
     }
     exit();

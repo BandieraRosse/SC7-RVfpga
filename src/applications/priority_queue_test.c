@@ -56,22 +56,23 @@ void exitApp3()
         {
             deleteproc(tid3);
             PRINT_COLOR(RED_COLOR_PRINT, "------------------------------pq_test end-------------------------------------------\n");
-            delay(1000);
             wakeup(lk);
+            delay(1000);
             exit();
         }
+        delay(1000);
         yield();
     }
 }
 int pq_test(void)
 {
     PRINT_COLOR(RED_COLOR_PRINT, "------------------------------pq_test start-------------------------------------------\n");
-    tid3 = sc7_create_process(&pq_entry, 14);
-    if (tid3 != NULL)
-        sc7_start_process(tid3);
     int tid = sc7_create_process(&exitApp3, 14);
     if (tid != NULL)
         sc7_start_process(tid);
+    tid3 = sc7_create_process(&pq_entry, 14);
+    if (tid3 != NULL)
+        sc7_start_process(tid3);
 
     return 0;
 }

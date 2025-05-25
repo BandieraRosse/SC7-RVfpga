@@ -44,6 +44,7 @@ void exitApp2()
             deleteproc(tid2);
             PRINT_COLOR(RED_COLOR_PRINT, "------------------------------segdig_test end -------------------------------------------\n");
             printf("成功退出segdig_sample\n");
+            WRITE_GPIO(SegDig_ADDR, 0);
             delay(1000);
             wakeup(lk);
             exit();

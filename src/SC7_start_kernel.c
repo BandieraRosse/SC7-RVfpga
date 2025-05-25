@@ -46,7 +46,7 @@ int SC7_start_kernel()
     uartInit();
     PRINT_COLOR(RED_COLOR_PRINT, "-------------------------------------------------------------------------\n");
     // PRINT_COLOR(GREEN_COLOR_PRINT,"SC7 is booting!\n");
-    printf_figlet_color("SC7 Is Booting!");                                              //< 艺术字打印
+    printf_figlet_color("SC7-RVFPGA");                                              //< 艺术字打印
     PRINT_COLOR(BLUE_COLOR_PRINT, "SC7_start_kernel at :%p\n", &SC7_start_kernel); //< 颜色打印
     for (int i = 65; i < 65 + 26; i++)
     {
@@ -76,8 +76,6 @@ int SC7_start_kernel()
     return 0;
 }
 
-// #define WAIT_TIME 50000000 //D_CLOCK_RATE
-//  #define WAIT_TIME 32*1000*1000 //大约一秒
 /*线程主动切换*/
 #define process_init_color GREEN_COLOR_PRINT
 void process_init_entry()
