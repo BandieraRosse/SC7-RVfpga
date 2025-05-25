@@ -2,27 +2,38 @@
 #include "process.h"
 #include "priority_queue.h"
 #include <string.h>
-// Private Functions
-static void priority_queue_realloc(PriorityQueue *pq);
-static void priority_queue_adjust_head(PriorityQueue *pq);
-static void priority_queue_adjust_tail(PriorityQueue *pq);
-static int priority_queue_compare(PriorityQueue *pq,
-                                  int pos1,
-                                  int pos2);
-static void priority_queue_swap(KeyValue **nodes,
-                                int pos1,
-                                int pos2);
-// Functions of KeyValue Struct
-KeyValue *key_value_new(int key,
-                        void *value)
+
+// 私有函数声明，用于内部逻辑处理
+static void priority_queue_realloc(PriorityQueue *pq);                    // 扩容优先队列
+static void priority_queue_adjust_head(PriorityQueue *pq);                // 调整堆顶
+static void priority_queue_adjust_tail(PriorityQueue *pq);                // 调整堆尾（插入后上浮）
+static int priority_queue_compare(PriorityQueue *pq, int pos1, int pos2); // 比较两个节点的大小，支持最大堆/最小堆
+static void priority_queue_swap(KeyValue **nodes, int pos1, int pos2);    // 交换两个节点
+
+// KeyValue 结构体相关函数
+
+/**
+ * 创建一个新的 KeyValue 对象
+ *
+ * @param key   键值
+ * @param value 数据指针
+ * @return      新创建的 KeyValue 实例
+ */
+KeyValue *key_value_new(int key, void *value)
 {
     KeyValue *pkv = (KeyValue *)kmalloc(sizeof(KeyValue));
     pkv->_key = key;
     pkv->_value = value;
     return pkv;
 }
-void key_value_free(KeyValue *kv,
-                    void (*freevalue)(void *))
+
+/**
+ * 释放一个 KeyValue 实例
+ *
+ * @param kv         待释放的 KeyValue 实例
+ * @param freevalue  自定义内存释放函数，用于释放 value 字段
+ */
+void key_value_free(KeyValue *kv, void (*freevalue)(void *))
 {
     if (kv)
     {
@@ -34,19 +45,32 @@ void key_value_free(KeyValue *kv,
     }
 }
 
-// Functions of PriorityQueue Struct
+// PriorityQueue 结构体相关函数
+
+/**
+ * 创建一个新的优先队列
+ *
+ * @param priority 队列类型（PRIORITY_MIN: 最小堆，PRIORITY_MAX: 最大堆）
+ * @return         新创建的优先队列实例
+ */
 PriorityQueue *priority_queue_new(int priority)
 {
     PriorityQueue *pq = (PriorityQueue *)kmalloc(sizeof(PriorityQueue));
-    pq->_capacity = 11; // default initial value
+    pq->_capacity = 11; // 默认初始容量
     pq->_size = 0;
     pq->_priority = priority;
 
     pq->_nodes = (KeyValue **)kmalloc(sizeof(KeyValue *) * pq->_capacity);
     return pq;
 }
-void priority_queue_free(PriorityQueue *pq,
-                         void (*freevalue)(void *))
+
+/**
+ * 释放优先队列及其所有元素
+ *
+ * @param pq         待释放的优先队列
+ * @param freevalue  自定义 value 内存释放函数
+ */
+void priority_queue_free(PriorityQueue *pq, void (*freevalue)(void *))
 {
     int i;
     if (pq)
@@ -57,39 +81,78 @@ void priority_queue_free(PriorityQueue *pq,
         kfree(pq);
     }
 }
+
+/**
+ * 获取堆顶元素（不删除）
+ *
+ * @param pq 优先队列
+ * @return   堆顶元素，若为空则返回 NULL
+ */
 const KeyValue *priority_queue_top(PriorityQueue *pq)
 {
     if (pq->_size > 0)
         return pq->_nodes[0];
     return NULL;
 }
+
+/**
+ * 弹出堆顶元素（并删除）
+ *
+ * @param pq 优先队列
+ * @return   被弹出的 KeyValue 实例
+ */
 KeyValue *priority_queue_dequeue(PriorityQueue *pq)
 {
     KeyValue *pkv = NULL;
     if (pq->_size > 0)
     {
         pkv = pq->_nodes[0];
-        priority_queue_adjust_head(pq);
+        priority_queue_adjust_head(pq); // 删除堆顶后调整堆结构
     }
     return pkv;
 }
-void priority_queue_enqueue(PriorityQueue *pq,
-                            KeyValue *kv)
+
+/**
+ * 向优先队列中添加一个元素
+ *
+ * @param pq 优先队列
+ * @param kv 待添加的 KeyValue 元素
+ */
+void priority_queue_enqueue(PriorityQueue *pq, KeyValue *kv)
 {
-    //printf("add key:%d\n", kv->_key);
     pq->_nodes[pq->_size] = kv;
-    priority_queue_adjust_tail(pq);
+    priority_queue_adjust_tail(pq); // 插入后上浮调整
     if (pq->_size >= pq->_capacity)
-        priority_queue_realloc(pq);
+        priority_queue_realloc(pq); // 容量不足时扩容
 }
+
+/**
+ * 获取优先队列当前元素个数
+ *
+ * @param pq 优先队列
+ * @return   当前元素数量
+ */
 int priority_queue_size(PriorityQueue *pq)
 {
     return pq->_size;
 }
+
+/**
+ * 判断优先队列是否为空
+ *
+ * @param pq 优先队列
+ * @return   若为空返回非零值，否则返回 0
+ */
 int priority_queue_empty(PriorityQueue *pq)
 {
     return pq->_size <= 0;
 }
+
+/**
+ * 打印优先队列内容（调试用）
+ *
+ * @param pq 优先队列
+ */
 void priority_queue_print(PriorityQueue *pq)
 {
     int i;
@@ -107,43 +170,47 @@ void priority_queue_print(PriorityQueue *pq)
     }
     printf("\n");
 }
+
+// 私有函数实现
+
+/**
+ * 扩容优先队列的存储空间（当容量不足时调用）
+ *
+ * @param pq 优先队列
+ */
 static void priority_queue_realloc(PriorityQueue *pq)
 {
     const size_t new_capacity = pq->_capacity * 2;
     const size_t new_size = sizeof(KeyValue *) * new_capacity;
 
-    // 分配新内存（使用自定义内存分配器）
     KeyValue **new_nodes = (KeyValue **)kmalloc(new_size);
     if (!new_nodes)
     {
         panic("Memory reallocation failed for priority queue");
     }
 
-    // 复制旧数据到新内存
     if (pq->_nodes)
     {
         memcpy(new_nodes, pq->_nodes, sizeof(KeyValue *) * pq->_size);
-
-        // 释放旧内存（使用自定义内存释放）
         kfree(pq->_nodes);
     }
 
-    // 更新队列属性
     pq->_capacity = new_capacity;
     pq->_nodes = new_nodes;
 
-    // 初始化新分配的内存（可选）
-    memset(pq->_nodes + pq->_size, 0,
-           sizeof(KeyValue *) * (new_capacity - pq->_size));
+    memset(pq->_nodes + pq->_size, 0, sizeof(KeyValue *) * (new_capacity - pq->_size));
 }
+
+/**
+ * 删除堆顶元素后的结构调整（下沉操作）
+ *
+ * @param pq 优先队列
+ */
 static void priority_queue_adjust_head(PriorityQueue *pq)
 {
-    // 步骤1：交换堆顶和最后一个元素
     priority_queue_swap(pq->_nodes, 0, pq->_size - 1);
-    // 步骤2：减小堆大小（相当于删除原堆顶元素）
     pq->_size--;
 
-    // 步骤3：从新堆顶开始下沉调整
     int i = 0;
     while (1)
     {
@@ -151,21 +218,16 @@ static void priority_queue_adjust_head(PriorityQueue *pq)
         int right = 2 * i + 2;
         int smallest = i;
 
-        // 比较左子节点（注意检查左子节点是否在堆范围内）
-        if (left < pq->_size &&
-            priority_queue_compare(pq, left, smallest) < 0)
+        if (left < pq->_size && priority_queue_compare(pq, left, smallest) < 0)
         {
             smallest = left;
         }
 
-        // 比较右子节点（注意检查右子节点是否在堆范围内）
-        if (right < pq->_size &&
-            priority_queue_compare(pq, right, smallest) < 0)
+        if (right < pq->_size && priority_queue_compare(pq, right, smallest) < 0)
         {
             smallest = right;
         }
 
-        // 若需要交换则继续下沉
         if (smallest != i)
         {
             priority_queue_swap(pq->_nodes, i, smallest);
@@ -173,10 +235,16 @@ static void priority_queue_adjust_head(PriorityQueue *pq)
         }
         else
         {
-            break; // 堆性质已满足
+            break;
         }
     }
 }
+
+/**
+ * 添加元素后的结构调整（上浮操作）
+ *
+ * @param pq 优先队列
+ */
 static void priority_queue_adjust_tail(PriorityQueue *pq)
 {
     int i, parent, child;
@@ -198,9 +266,15 @@ static void priority_queue_adjust_tail(PriorityQueue *pq)
     }
 }
 
-static int priority_queue_compare(PriorityQueue *pq,
-                                  int pos1,
-                                  int pos2)
+/**
+ * 比较两个节点的键值，根据最大堆或最小堆决定比较方向
+ *
+ * @param pq   优先队列
+ * @param pos1 第一个节点位置
+ * @param pos2 第二个节点位置
+ * @return     比较结果
+ */
+static int priority_queue_compare(PriorityQueue *pq, int pos1, int pos2)
 {
     int adjust = -1;
     int r = pq->_nodes[pos1]->_key - pq->_nodes[pos2]->_key;
@@ -208,9 +282,15 @@ static int priority_queue_compare(PriorityQueue *pq,
         r *= adjust;
     return r;
 }
-static void priority_queue_swap(KeyValue **nodes,
-                                int pos1,
-                                int pos2)
+
+/**
+ * 交换两个节点
+ *
+ * @param nodes 节点数组
+ * @param pos1  第一个节点位置
+ * @param pos2  第二个节点位置
+ */
+static void priority_queue_swap(KeyValue **nodes, int pos1, int pos2)
 {
     KeyValue *temp = nodes[pos1];
     nodes[pos1] = nodes[pos2];
